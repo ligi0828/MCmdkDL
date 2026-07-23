@@ -1,0 +1,1407 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Forge MDK 下载 · 自动镜像替换</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js">
+    </script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: #f6f8fc;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            color: #1e293b;
+        }
+
+        .container {
+            max-width: 860px;
+            width: 100%;
+            background: #ffffff;
+            border-radius: 28px;
+            box-shadow: 0 20px 60px rgba(0, 20, 40, 0.08);
+            padding: 40px 42px 38px;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 8px;
+        }
+
+        .header-icon {
+            width: 44px;
+            height: 44px;
+            background: #eef2ff;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            color: #0f172a;
+        }
+
+        .subtitle {
+            font-size: 15px;
+            color: #64748b;
+            margin-bottom: 28px;
+            padding-left: 58px;
+            line-height: 1.5;
+        }
+
+        .subtitle strong {
+            color: #1e293b;
+            font-weight: 500;
+        }
+
+        .download-section {
+            background: #f0f7ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 16px;
+            padding: 20px 24px 24px;
+            margin-bottom: 28px;
+        }
+
+        .download-section .section-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #1e40af;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+
+        .download-section .section-title .badge-new {
+            font-size: 11px;
+            font-weight: 500;
+            background: #3b82f6;
+            color: #fff;
+            padding: 2px 10px;
+            border-radius: 40px;
+        }
+
+        .download-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .download-row .field-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            flex: 1 1 180px;
+        }
+
+        .download-row .field-group label {
+            font-size: 13px;
+            font-weight: 500;
+            color: #1e293b;
+        }
+
+        .download-row .field-group select {
+            padding: 8px 14px;
+            border: 1.5px solid #d1d9e6;
+            border-radius: 10px;
+            font-size: 14px;
+            width: 100%;
+            background: #fff;
+            transition: border-color 0.2s;
+            appearance: auto;
+        }
+
+        .download-row .field-group select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        }
+
+        .download-row .field-group select:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .download-row .btn-download-forge {
+            padding: 10px 28px;
+            background: #3b82f6;
+            color: #fff;
+            border: none;
+            border-radius: 40px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            align-self: flex-end;
+            margin-top: 4px;
+        }
+
+        .download-row .btn-download-forge:hover {
+            background: #2563eb;
+        }
+
+        .download-row .btn-download-forge:active {
+            transform: scale(0.97);
+        }
+
+        .download-row .btn-download-forge:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .download-hint {
+            font-size: 13px;
+            color: #64748b;
+            margin-top: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .download-hint .status-text {
+            color: #3b82f6;
+            font-weight: 500;
+        }
+
+        .drop-zone {
+            border: 2px dashed #d1d9e6;
+            border-radius: 20px;
+            padding: 40px 28px;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.25s, background 0.2s;
+            background: #fafcff;
+            position: relative;
+        }
+
+        .drop-zone:hover,
+        .drop-zone.dragover {
+            border-color: #3b82f6;
+            background: #f0f7ff;
+        }
+
+        .drop-zone .icon {
+            font-size: 40px;
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        .drop-zone .main-text {
+            font-size: 17px;
+            font-weight: 500;
+            color: #0f172a;
+        }
+
+        .drop-zone .hint {
+            font-size: 14px;
+            color: #94a3b8;
+            margin-top: 4px;
+        }
+
+        .drop-zone .browse-btn {
+            display: inline-block;
+            margin-top: 14px;
+            padding: 8px 24px;
+            background: #3b82f6;
+            color: #fff;
+            border: none;
+            border-radius: 40px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .drop-zone .browse-btn:hover {
+            background: #2563eb;
+        }
+
+        .drop-zone input[type="file"] {
+            display: none;
+        }
+
+        .file-card {
+            display: none;
+            margin-top: 20px;
+            background: #f8fafc;
+            border-radius: 16px;
+            padding: 16px 22px;
+            border: 1px solid #e9edf4;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .file-card.visible {
+            display: flex;
+        }
+
+        .file-card .file-icon {
+            font-size: 26px;
+            flex-shrink: 0;
+        }
+
+        .file-card .file-info {
+            flex: 1;
+            min-width: 140px;
+        }
+
+        .file-card .file-name {
+            font-weight: 500;
+            color: #0f172a;
+            word-break: break-all;
+        }
+
+        .file-card .file-size {
+            font-size: 13px;
+            color: #94a3b8;
+        }
+
+        .file-card .file-status {
+            font-size: 13px;
+            padding: 4px 14px;
+            border-radius: 40px;
+            background: #e9edf4;
+            color: #475569;
+            white-space: nowrap;
+        }
+
+        .file-card .file-status.success {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .file-card .file-status.error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .file-card .file-status.info {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .diff-section {
+            display: none;
+            margin-top: 20px;
+            background: #f8fafc;
+            border-radius: 16px;
+            border: 1px solid #e9edf4;
+            padding: 18px 22px 20px;
+        }
+
+        .diff-section.visible {
+            display: block;
+        }
+
+        .diff-section .diff-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #0f172a;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .diff-section .diff-title .badge {
+            font-size: 11px;
+            font-weight: 500;
+            background: #e9edf4;
+            padding: 2px 10px;
+            border-radius: 40px;
+            color: #475569;
+        }
+
+        .diff-row {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding: 10px 14px;
+            background: #ffffff;
+            border-radius: 12px;
+            border: 1px solid #eef2f6;
+            margin-bottom: 10px;
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            font-size: 14px;
+            word-break: break-all;
+        }
+
+        .diff-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .diff-row .label {
+            font-size: 12px;
+            font-weight: 500;
+            color: #94a3b8;
+            font-family: system-ui, -apple-system, sans-serif;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+        }
+
+        .diff-row .old-url {
+            color: #dc2626;
+            background: #fef2f2;
+            padding: 6px 12px;
+            border-radius: 8px;
+            border-left: 4px solid #dc2626;
+        }
+
+        .diff-row .new-url {
+            color: #16a34a;
+            background: #f0fdf4;
+            padding: 6px 12px;
+            border-radius: 8px;
+            border-left: 4px solid #16a34a;
+        }
+
+        .diff-row .url-text {
+            font-size: 13px;
+            line-height: 1.6;
+            overflow-wrap: anywhere;
+        }
+
+        .actions {
+            display: none;
+            margin-top: 22px;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+
+        .actions.visible {
+            display: flex;
+        }
+
+        .actions .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 28px;
+            border: none;
+            border-radius: 40px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: #f1f5f9;
+            color: #1e293b;
+            text-decoration: none;
+            flex: 1 1 auto;
+            justify-content: center;
+            min-width: 140px;
+        }
+
+        .actions .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+        }
+
+        .actions .btn:active {
+            transform: translateY(0);
+        }
+
+        .actions .btn-primary {
+            background: #3b82f6;
+            color: #fff;
+        }
+
+        .actions .btn-primary:hover {
+            background: #2563eb;
+        }
+
+        .actions .btn-success {
+            background: #22c55e;
+            color: #fff;
+        }
+
+        .actions .btn-success:hover {
+            background: #16a34a;
+        }
+
+        .actions .btn-outline {
+            background: transparent;
+            border: 1.5px solid #d1d9e6;
+        }
+
+        .actions .btn-outline:hover {
+            border-color: #94a3b8;
+            background: #f8fafc;
+        }
+
+        .actions .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        .toast {
+            display: none;
+            margin-top: 18px;
+            padding: 14px 20px;
+            border-radius: 12px;
+            font-size: 14px;
+            background: #f1f5f9;
+            color: #1e293b;
+            border: 1px solid #e9edf4;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .toast.visible {
+            display: flex;
+        }
+
+        .toast .toast-icon {
+            font-size: 22px;
+            flex-shrink: 0;
+        }
+
+        .toast .toast-msg {
+            flex: 1;
+            line-height: 1.5;
+        }
+
+        .toast.success {
+            background: #f0fdf4;
+            border-color: #bbf7d0;
+            color: #166534;
+        }
+
+        .toast.error {
+            background: #fef2f2;
+            border-color: #fecaca;
+            color: #991b1b;
+        }
+
+        .toast.info {
+            background: #eff6ff;
+            border-color: #bfdbfe;
+            color: #1e40af;
+        }
+
+        .footer {
+            margin-top: 28px;
+            padding-top: 16px;
+            border-top: 1px solid #eef2f6;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            font-size: 13px;
+            color: #94a3b8;
+        }
+
+        .footer .fs-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: #f1f5f9;
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-size: 12px;
+            color: #475569;
+        }
+
+        @media (max-width: 640px) {
+            .container {
+                padding: 20px 16px;
+                border-radius: 20px;
+            }
+
+            .header h1 {
+                font-size: 20px;
+            }
+
+            .subtitle {
+                padding-left: 0;
+                font-size: 14px;
+            }
+
+            .download-section {
+                padding: 16px;
+            }
+
+            .download-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .download-row .field-group {
+                flex: 1 1 auto;
+            }
+
+            .download-row .btn-download-forge {
+                justify-content: center;
+                align-self: stretch;
+            }
+
+            .drop-zone {
+                padding: 28px 16px;
+            }
+
+            .drop-zone .icon {
+                font-size: 32px;
+            }
+
+            .drop-zone .main-text {
+                font-size: 16px;
+            }
+
+            .diff-row {
+                font-size: 13px;
+                padding: 8px 12px;
+            }
+
+            .actions .btn {
+                padding: 10px 18px;
+                font-size: 14px;
+                min-width: 100px;
+                flex: 1 1 100%;
+            }
+
+            .file-card {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+            }
+
+            .footer {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 12px 10px;
+            }
+
+            .diff-row .url-text {
+                font-size: 12px;
+            }
+
+            .actions .btn {
+                font-size: 13px;
+                padding: 10px 14px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container" id="app">
+        <div class="header">
+            <div class="header-icon">⚙️</div>
+            <h1>Forge MDK 下载 · 自动镜像替换</h1>
+        </div>
+        <div class="subtitle">
+            从 <strong>实时列表</strong> 选择版本，下载的 MDK 将 <strong>自动替换</strong>
+            <code>gradle-wrapper.properties</code> 中的镜像源为
+            <span style="color:#16a34a;">mirrors.cloud.tencent.com</span>
+            （格式：<code>https\://</code>）
+        </div>
+
+        <div class="download-section">
+            <div class="section-title">
+                ⬇️ 选择 Forge 版本并自动处理
+                <span class="badge-new">一键完成</span>
+            </div>
+            <div class="download-row">
+                <div class="field-group">
+                    <label for="mcVersionSelect">Minecraft 版本</label>
+                    <select id="mcVersionSelect">
+                        <option value="">加载中...</option>
+                    </select>
+                </div>
+                <div class="field-group">
+                    <label for="forgeBuildSelect">Forge 构建号</label>
+                    <select id="forgeBuildSelect" disabled>
+                        <option value="">请先选择 MC 版本</option>
+                    </select>
+                </div>
+                <button class="btn-download-forge" id="downloadForgeBtn" disabled>
+                    📦 下载并替换镜像
+                </button>
+            </div>
+            <div class="download-hint">
+                <span>📋 数据来源：</span><code>BMCLAPI + 代理</code>
+                <span class="status-text" id="apiStatus">● 通过公共代理</span>
+                <span style="color:#94a3b8;margin-left:auto;">多代理自动轮询</span>
+            </div>
+        </div>
+
+        <div class="drop-zone" id="dropZone">
+            <span class="icon">📂</span>
+            <div class="main-text">或者拖拽已有 ZIP 进行镜像替换</div>
+            <div class="hint">支持 .zip · 单个文件最大 100MB</div>
+            <button class="browse-btn" id="browseBtn">浏览文件</button>
+            <input type="file" id="fileInput" accept=".zip" />
+        </div>
+
+        <div class="file-card" id="fileCard">
+            <span class="file-icon">📄</span>
+            <div class="file-info">
+                <div class="file-name" id="fileName">未命名.zip</div>
+                <div class="file-size" id="fileSize">0 KB</div>
+            </div>
+            <span class="file-status" id="fileStatus">⏳ 处理中...</span>
+        </div>
+
+        <div class="diff-section" id="diffSection">
+            <div class="diff-title">
+                📝 修改内容
+                <span class="badge" id="versionBadge">Gradle 版本</span>
+            </div>
+            <div class="diff-row">
+                <div class="label">🔴 原始地址</div>
+                <div class="old-url url-text" id="oldUrl">https://services.gradle.org/distributions/gradle-xxx.zip</div>
+            </div>
+            <div class="diff-row">
+                <div class="label">🟢 新地址 (腾讯云)</div>
+                <div class="new-url url-text" id="newUrl">https\://mirrors.cloud.tencent.com/gradle/gradle-xxx.zip</div>
+            </div>
+        </div>
+
+        <div class="actions" id="actions">
+            <button class="btn btn-primary" id="downloadBtn">⬇️ 下载新 ZIP</button>
+            <button class="btn btn-success" id="replaceBtn">🔄 替换原文件</button>
+            <button class="btn btn-outline" id="resetBtn">↺ 重新选择</button>
+        </div>
+
+        <div class="toast" id="toast">
+            <span class="toast-icon" id="toastIcon">ℹ️</span>
+            <span class="toast-msg" id="toastMsg">就绪</span>
+        </div>
+
+        <div class="footer">
+            <span>🛠️ 适用于 Minecraft Java Mod 开发 · 开源工具</span>
+            <span class="fs-badge">📁 JSZip · 公共代理</span>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            'use strict';
+
+            // ========== DOM 引用 ==========
+            const mcVersionSelect = document.getElementById('mcVersionSelect');
+            const forgeBuildSelect = document.getElementById('forgeBuildSelect');
+            const downloadForgeBtn = document.getElementById('downloadForgeBtn');
+            const apiStatus = document.getElementById('apiStatus');
+
+            const dropZone = document.getElementById('dropZone');
+            const fileInput = document.getElementById('fileInput');
+            const browseBtn = document.getElementById('browseBtn');
+            const fileCard = document.getElementById('fileCard');
+            const fileName = document.getElementById('fileName');
+            const fileSize = document.getElementById('fileSize');
+            const fileStatus = document.getElementById('fileStatus');
+            const diffSection = document.getElementById('diffSection');
+            const oldUrl = document.getElementById('oldUrl');
+            const newUrl = document.getElementById('newUrl');
+            const versionBadge = document.getElementById('versionBadge');
+            const actions = document.getElementById('actions');
+            const downloadBtn = document.getElementById('downloadBtn');
+            const replaceBtn = document.getElementById('replaceBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            const toast = document.getElementById('toast');
+            const toastIcon = document.getElementById('toastIcon');
+            const toastMsg = document.getElementById('toastMsg');
+
+            // ========== 状态 ==========
+            let currentZipData = null;
+            let currentFileName = '';
+            let currentGradleVersion = '';
+            let isProcessing = false;
+            let mcVersions = [];
+            let forgeBuilds = [];
+
+            // ========== 工具函数 ==========
+            function formatSize(bytes) {
+                if (bytes < 1024) return bytes + ' B';
+                if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+                return (bytes / 1048576).toFixed(1) + ' MB';
+            }
+
+            function showToast(msg, type = 'info', icon = 'ℹ️') {
+                toast.className = 'toast visible ' + type;
+                toastIcon.textContent = icon;
+                toastMsg.textContent = msg;
+            }
+
+            function hideToast() { toast.className = 'toast'; }
+
+            function setStatus(text, type = 'info') {
+                fileStatus.textContent = text;
+                fileStatus.className = 'file-status ' + type;
+            }
+
+            function resetUI() {
+                fileCard.classList.remove('visible');
+                diffSection.classList.remove('visible');
+                actions.classList.remove('visible');
+                hideToast();
+                currentZipData = null;
+                currentFileName = '';
+                currentGradleVersion = '';
+                isProcessing = false;
+                downloadBtn.disabled = false;
+                replaceBtn.disabled = false;
+            }
+
+            function showError(msg) {
+                showToast(msg, 'error', '❌');
+                setStatus('处理失败', 'error');
+                actions.classList.remove('visible');
+                diffSection.classList.remove('visible');
+            }
+
+            // ========== 代理池（用于 JSON 和二进制） ==========
+            // JSON 代理（获取版本列表）
+            const jsonProxyPool = [
+                (url) => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
+                (url) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+                (url) => `https://corsproxy.org/?${encodeURIComponent(url)}`
+            ];
+
+            // 二进制代理（下载 ZIP）
+            const binaryProxyPool = [
+                (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+                (url) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+                (url) => `https://corsproxy.org/?${encodeURIComponent(url)}`
+            ];
+
+            // 带超时和重试的 fetch
+            function fetchWithTimeout(url, options = {}, timeout = 20000) {
+                const controller = new AbortController();
+                const id = setTimeout(() => controller.abort(), timeout);
+                return fetch(url, { ...options, signal: controller.signal })
+                    .finally(() => clearTimeout(id));
+            }
+
+            // 通用 JSON 代理请求（自动解析 allorigins.win 的包装）
+            async function fetchViaJsonProxy(targetUrl) {
+                for (let i = 0; i < jsonProxyPool.length; i++) {
+                    const proxyFn = jsonProxyPool[i];
+                    const proxyUrl = proxyFn(targetUrl);
+                    try {
+                        const response = await fetchWithTimeout(proxyUrl, {}, 20000);
+                        if (!response.ok) {
+                            console.warn(`JSON代理 ${i + 1} 返回状态 ${response.status}`);
+                            continue;
+                        }
+                        const data = await response.json();
+                        // 如果是 allorigins.win/get，解析 contents
+                        if (proxyUrl.includes('api.allorigins.win/get')) {
+                            if (!data.contents) {
+                                console.warn('allorigins.win/get 缺少 contents');
+                                continue;
+                            }
+                            try {
+                                return JSON.parse(data.contents);
+                            } catch (_) {
+                                // contents 不是 JSON，可能是纯文本，直接返回
+                                return data.contents;
+                            }
+                        }
+                        return data;
+                    } catch (err) {
+                        console.warn(`JSON代理 ${i + 1} 失败:`, err.message);
+                    }
+                }
+                throw new Error('所有 JSON 代理均失败');
+            }
+
+            // 二进制代理请求（返回 ArrayBuffer）
+            async function fetchBinaryViaProxy(targetUrl) {
+                for (let i = 0; i < binaryProxyPool.length; i++) {
+                    const proxyFn = binaryProxyPool[i];
+                    const proxyUrl = proxyFn(targetUrl);
+                    try {
+                        const response = await fetchWithTimeout(proxyUrl, {}, 30000);
+                        if (!response.ok) {
+                            console.warn(`二进制代理 ${i + 1} 返回状态 ${response.status}`);
+                            continue;
+                        }
+                        // 对于 allorigins.win/raw，直接返回 arrayBuffer
+                        const arrayBuffer = await response.arrayBuffer();
+                        if (arrayBuffer.byteLength === 0) {
+                            console.warn(`二进制代理 ${i + 1} 返回空内容`);
+                            continue;
+                        }
+                        return arrayBuffer;
+                    } catch (err) {
+                        console.warn(`二进制代理 ${i + 1} 失败:`, err.message);
+                    }
+                }
+                throw new Error('所有二进制代理均失败');
+            }
+
+            // ========== 获取 MC 版本列表 ==========
+            async function fetchMcVersions() {
+                try {
+                    apiStatus.textContent = '⏳ 加载中...';
+                    apiStatus.style.color = '#f59e0b';
+                    mcVersionSelect.disabled = true;
+                    mcVersionSelect.innerHTML = '<option value="">加载中...</option>';
+
+                    const data = await fetchViaJsonProxy('https://bmclapi2.bangbang93.com/forge/minecraft');
+
+                    if (!Array.isArray(data) || data.length === 0) {
+                        throw new Error('返回数据格式异常');
+                    }
+
+                    mcVersions = data.sort((a, b) => {
+                        const partsA = String(a).split('.').map(Number);
+                        const partsB = String(b).split('.').map(Number);
+                        const maxLen = Math.max(partsA.length, partsB.length);
+                        for (let i = 0; i < maxLen; i++) {
+                            const va = i < partsA.length ? partsA[i] : 0;
+                            const vb = i < partsB.length ? partsB[i] : 0;
+                            if (va !== vb) return vb - va;
+                        }
+                        return 0;
+                    });
+
+                    mcVersionSelect.innerHTML = '';
+                    mcVersions.forEach(ver => {
+                        const opt = document.createElement('option');
+                        opt.value = ver;
+                        opt.textContent = ver;
+                        mcVersionSelect.appendChild(opt);
+                    });
+
+                    mcVersionSelect.disabled = false;
+                    apiStatus.textContent = '● 已连接';
+                    apiStatus.style.color = '#22c55e';
+                    showToast(`✅ 获取到 ${mcVersions.length} 个版本`, 'success', '📋');
+
+                    if (mcVersions.length > 0) {
+                        mcVersionSelect.value = mcVersions[0];
+                        await fetchForgeBuilds(mcVersions[0]);
+                    }
+
+                } catch (err) {
+                    console.error(err);
+                    apiStatus.textContent = '⚠️ 连接失败';
+                    apiStatus.style.color = '#ef4444';
+                    mcVersionSelect.innerHTML = '<option value="">加载失败，请刷新重试</option>';
+                    showToast('获取版本失败: ' + err.message, 'error', '❌');
+                }
+            }
+
+            // ========== 获取 Forge 构建号 ==========
+            async function fetchForgeBuilds(mcVersion) {
+                if (!mcVersion) {
+                    forgeBuildSelect.disabled = true;
+                    forgeBuildSelect.innerHTML = '<option value="">请先选择 MC 版本</option>';
+                    downloadForgeBtn.disabled = true;
+                    return;
+                }
+
+                try {
+                    forgeBuildSelect.disabled = true;
+                    forgeBuildSelect.innerHTML = '<option value="">加载中...</option>';
+                    downloadForgeBtn.disabled = true;
+
+                    const data = await fetchViaJsonProxy(`https://bmclapi2.bangbang93.com/forge/minecraft/${mcVersion}`);
+
+                    if (!data || !Array.isArray(data) || data.length === 0) {
+                        throw new Error(`该版本暂无 Forge 构建号`);
+                    }
+
+                    const builds = data
+                        .filter(item => item && item.version)
+                        .map(item => String(item.version));
+
+                    if (builds.length === 0) {
+                        throw new Error(`该版本暂无 Forge 构建号`);
+                    }
+
+                    forgeBuilds = builds.sort((a, b) => {
+                        const partsA = String(a).split('.').map(Number);
+                        const partsB = String(b).split('.').map(Number);
+                        const maxLen = Math.max(partsA.length, partsB.length);
+                        for (let i = 0; i < maxLen; i++) {
+                            const va = i < partsA.length ? partsA[i] : 0;
+                            const vb = i < partsB.length ? partsB[i] : 0;
+                            if (va !== vb) return vb - va;
+                        }
+                        return 0;
+                    });
+
+                    let recommended = null;
+                    if (data.some && data.some(item => item.recommended === true)) {
+                        const recItem = data.find(item => item.recommended === true);
+                        if (recItem && recItem.version) {
+                            recommended = String(recItem.version);
+                        }
+                    }
+
+                    forgeBuildSelect.innerHTML = '';
+                    forgeBuilds.forEach(build => {
+                        const opt = document.createElement('option');
+                        opt.value = build;
+                        let label = build;
+                        if (recommended && recommended === build) {
+                            label += ' ⭐ 推荐';
+                        }
+                        opt.textContent = label;
+                        forgeBuildSelect.appendChild(opt);
+                    });
+
+                    forgeBuildSelect.disabled = false;
+                    downloadForgeBtn.disabled = false;
+                    showToast(`✅ 找到 ${forgeBuilds.length} 个构建号`, 'success', '📦');
+
+                } catch (err) {
+                    console.error('获取构建号失败:', err);
+                    forgeBuildSelect.innerHTML = `<option value="">${err.message || '获取失败'}</option>`;
+                    forgeBuildSelect.disabled = true;
+                    downloadForgeBtn.disabled = true;
+                    showToast(`ℹ️ ${mcVersion} 暂无 Forge 构建号`, 'info', 'ℹ️');
+                }
+            }
+
+            // ========== 核心：下载 MDK（通过二进制代理）并自动替换镜像 ==========
+            async function downloadAndProcessForge() {
+                const mcVer = mcVersionSelect.value;
+                const build = forgeBuildSelect.value;
+                if (!mcVer || !build) {
+                    showToast('请选择完整的版本信息', 'error', '❌');
+                    return;
+                }
+
+                const version = `${mcVer}-${build}`;
+                const fileName = `forge-${version}-mdk.zip`;
+                const originalUrl = `https://files.minecraftforge.net/maven/net/minecraftforge/forge/${version}/${fileName}`;
+
+                showToast(`⏳ 正在通过代理下载 ${fileName} ...`, 'info', '📥');
+                downloadForgeBtn.disabled = true;
+                downloadForgeBtn.textContent = '⏳ 下载中...';
+
+                try {
+                    // 通过二进制代理获取 ArrayBuffer
+                    const arrayBuffer = await fetchBinaryViaProxy(originalUrl);
+                    if (arrayBuffer.byteLength === 0) {
+                        throw new Error('下载的文件为空');
+                    }
+
+                    // 使用 JSZip 加载
+                    const zip = await JSZip.loadAsync(arrayBuffer);
+                    const entries = Object.keys(zip.files);
+
+                    const targetPath = 'gradle/wrapper/gradle-wrapper.properties';
+                    const altPath = 'gradle\\wrapper\\gradle-wrapper.properties';
+                    let propFile = zip.files[targetPath] || zip.files[altPath];
+                    if (!propFile) {
+                        const found = entries.find(k =>
+                            k.replace(/\\/g, '/').endsWith('gradle/wrapper/gradle-wrapper.properties')
+                        );
+                        if (found) propFile = zip.files[found];
+                    }
+
+                    if (!propFile) {
+                        throw new Error('未找到 gradle/wrapper/gradle-wrapper.properties，不是有效的 MDK');
+                    }
+
+                    const content = await propFile.async('string');
+                    const lines = content.split(/\r?\n/);
+                    let urlLineIndex = -1;
+                    let oldDistributionUrl = '';
+                    const urlPrefix = 'distributionUrl=';
+                    const gradlePattern = /gradle-([\d.]+)-?([a-z]+)?\.zip/i;
+
+                    for (let i = 0; i < lines.length; i++) {
+                        const line = lines[i].trim();
+                        if (line.startsWith(urlPrefix)) {
+                            urlLineIndex = i;
+                            oldDistributionUrl = line.substring(urlPrefix.length).trim();
+                            break;
+                        }
+                    }
+
+                    if (urlLineIndex === -1 || !oldDistributionUrl) {
+                        throw new Error('未找到 distributionUrl 配置项');
+                    }
+
+                    const match = oldDistributionUrl.match(gradlePattern);
+                    if (!match) {
+                        throw new Error('无法解析 Gradle 版本');
+                    }
+                    currentGradleVersion = match[1];
+
+                    const fileNameFromUrl = oldDistributionUrl.split('/').pop();
+                    const newDistributionUrl = `https\\://mirrors.cloud.tencent.com/gradle/${fileNameFromUrl}`;
+
+                    if (oldDistributionUrl.includes('mirrors.cloud.tencent.com')) {
+                        showToast('该 MDK 已使用腾讯云镜像，无需修改', 'info', '✅');
+                        currentZipData = new Uint8Array(arrayBuffer);
+                        currentFileName = fileName;
+                        oldUrl.textContent = oldDistributionUrl;
+                        newUrl.textContent = newDistributionUrl;
+                        versionBadge.textContent = `Gradle ${currentGradleVersion}`;
+                        diffSection.classList.add('visible');
+                        actions.classList.add('visible');
+                        fileCard.classList.add('visible');
+                        fileName.textContent = fileName;
+                        fileSize.textContent = formatSize(arrayBuffer.byteLength);
+                        setStatus('已是最新镜像', 'success');
+                        downloadForgeBtn.disabled = false;
+                        downloadForgeBtn.textContent = '📦 下载并替换镜像';
+                        downloadNewZip();
+                        return;
+                    }
+
+                    const newContent = content.replace(
+                        /distributionUrl=.*/,
+                        `distributionUrl=${newDistributionUrl}`
+                    );
+                    zip.file(propFile.name, newContent);
+
+                    const newZipBlob = await zip.generateAsync({
+                        type: 'blob',
+                        compression: 'DEFLATE',
+                        compressionOptions: { level: 6 }
+                    });
+                    const newZipBuffer = await newZipBlob.arrayBuffer();
+                    currentZipData = new Uint8Array(newZipBuffer);
+                    currentFileName = fileName;
+
+                    oldUrl.textContent = oldDistributionUrl;
+                    newUrl.textContent = newDistributionUrl;
+                    versionBadge.textContent = `Gradle ${currentGradleVersion}`;
+                    diffSection.classList.add('visible');
+                    actions.classList.add('visible');
+
+                    fileCard.classList.add('visible');
+                    fileName.textContent = fileName;
+                    fileSize.textContent = formatSize(newZipBlob.size);
+                    setStatus('✅ 镜像已替换', 'success');
+
+                    showToast(`✅ 下载并处理完成！Gradle ${currentGradleVersion}`, 'success', '🎉');
+                    downloadNewZip();
+
+                } catch (err) {
+                    console.error(err);
+                    showToast('处理失败: ' + err.message, 'error', '❌');
+                } finally {
+                    downloadForgeBtn.disabled = false;
+                    downloadForgeBtn.textContent = '📦 下载并替换镜像';
+                }
+            }
+
+            // ========== 下载新 ZIP ==========
+            function downloadNewZip() {
+                if (!currentZipData) {
+                    showToast('没有可下载的数据', 'error', '❌');
+                    return;
+                }
+                try {
+                    const blob = new Blob([currentZipData], { type: 'application/zip' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    const baseName = currentFileName.replace(/\.zip$/i, '');
+                    a.download = `${baseName}_mirrored.zip`;
+                    a.href = url;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    setTimeout(() => URL.revokeObjectURL(url), 5000);
+                    showToast('✅ 下载已开始', 'success', '⬇️');
+                } catch (err) {
+                    console.error(err);
+                    showToast('下载失败: ' + err.message, 'error', '❌');
+                }
+            }
+
+            // ========== 替换原文件 ==========
+            async function replaceOriginalFile() {
+                if (!currentZipData) {
+                    showToast('没有可替换的数据', 'error', '❌');
+                    return;
+                }
+                if (!('showOpenFilePicker' in window)) {
+                    showToast('当前浏览器不支持替换原文件，请使用"下载新 ZIP"', 'error', '⚠️');
+                    return;
+                }
+                try {
+                    replaceBtn.disabled = true;
+                    showToast('请选择要替换的 ZIP 文件', 'info', '📂');
+                    const [fileHandle] = await window.showOpenFilePicker({
+                        types: [{ description: 'ZIP 文件', accept: { 'application/zip': ['.zip'] } }],
+                        multiple: false,
+                    });
+                    if (!fileHandle.name.toLowerCase().endsWith('.zip')) {
+                        showToast('请选择 .zip 文件', 'error', '❌');
+                        replaceBtn.disabled = false;
+                        return;
+                    }
+                    const writable = await fileHandle.createWritable({ keepExistingData: false });
+                    const blob = new Blob([currentZipData], { type: 'application/zip' });
+                    await writable.write(blob);
+                    await writable.close();
+                    showToast(`✅ 替换成功: ${fileHandle.name}`, 'success', '🎉');
+                    replaceBtn.disabled = false;
+                    fileName.textContent = fileHandle.name + ' (已替换)';
+                    fileSize.textContent = formatSize(currentZipData.length);
+                } catch (err) {
+                    if (err.name === 'AbortError' || err.name === 'SecurityError') {
+                        showToast('操作已取消', 'info', 'ℹ️');
+                    } else {
+                        console.error(err);
+                        showToast('替换失败: ' + err.message, 'error', '❌');
+                    }
+                    replaceBtn.disabled = false;
+                }
+            }
+
+            // ========== 上传 ZIP 处理 ==========
+            async function processZip(file) {
+                if (!file) return;
+                if (!file.name.toLowerCase().endsWith('.zip')) {
+                    showError('请上传 .zip 格式的文件');
+                    return;
+                }
+                if (file.size > 100 * 1024 * 1024) {
+                    showError('文件大小超过 100MB');
+                    return;
+                }
+
+                hideToast();
+                isProcessing = true;
+                setStatus('读取中...', 'info');
+                downloadBtn.disabled = true;
+                replaceBtn.disabled = true;
+
+                try {
+                    const arrayBuffer = await file.arrayBuffer();
+                    const zip = await JSZip.loadAsync(arrayBuffer);
+                    const entries = Object.keys(zip.files);
+
+                    const targetPath = 'gradle/wrapper/gradle-wrapper.properties';
+                    const altPath = 'gradle\\wrapper\\gradle-wrapper.properties';
+                    let propFile = zip.files[targetPath] || zip.files[altPath];
+                    if (!propFile) {
+                        const found = entries.find(k =>
+                            k.replace(/\\/g, '/').endsWith('gradle/wrapper/gradle-wrapper.properties')
+                        );
+                        if (found) propFile = zip.files[found];
+                    }
+                    if (!propFile) {
+                        showError('未找到 gradle-wrapper.properties');
+                        isProcessing = false;
+                        downloadBtn.disabled = false;
+                        replaceBtn.disabled = false;
+                        return;
+                    }
+
+                    const content = await propFile.async('string');
+                    const lines = content.split(/\r?\n/);
+                    let urlLineIndex = -1;
+                    let oldDistributionUrl = '';
+                    const urlPrefix = 'distributionUrl=';
+                    const gradlePattern = /gradle-([\d.]+)-?([a-z]+)?\.zip/i;
+
+                    for (let i = 0; i < lines.length; i++) {
+                        const line = lines[i].trim();
+                        if (line.startsWith(urlPrefix)) {
+                            urlLineIndex = i;
+                            oldDistributionUrl = line.substring(urlPrefix.length).trim();
+                            break;
+                        }
+                    }
+                    if (urlLineIndex === -1 || !oldDistributionUrl) {
+                        showError('未找到 distributionUrl');
+                        isProcessing = false;
+                        downloadBtn.disabled = false;
+                        replaceBtn.disabled = false;
+                        return;
+                    }
+
+                    const match = oldDistributionUrl.match(gradlePattern);
+                    if (!match) {
+                        showError('无法解析 Gradle 版本');
+                        isProcessing = false;
+                        downloadBtn.disabled = false;
+                        replaceBtn.disabled = false;
+                        return;
+                    }
+                    currentGradleVersion = match[1];
+
+                    const fileNameFromUrl = oldDistributionUrl.split('/').pop();
+                    const newDistributionUrl = `https\\://mirrors.cloud.tencent.com/gradle/${fileNameFromUrl}`;
+
+                    if (oldDistributionUrl.includes('mirrors.cloud.tencent.com')) {
+                        showToast('已使用腾讯云镜像，无需修改', 'info', '✅');
+                        setStatus('已是腾讯云镜像', 'success');
+                        diffSection.classList.remove('visible');
+                        actions.classList.remove('visible');
+                        isProcessing = false;
+                        downloadBtn.disabled = false;
+                        replaceBtn.disabled = false;
+                        return;
+                    }
+
+                    const newContent = content.replace(
+                        /distributionUrl=.*/,
+                        `distributionUrl=${newDistributionUrl}`
+                    );
+                    zip.file(propFile.name, newContent);
+
+                    const newZipBlob = await zip.generateAsync({
+                        type: 'blob',
+                        compression: 'DEFLATE',
+                        compressionOptions: { level: 6 }
+                    });
+                    const newZipBuffer = await newZipBlob.arrayBuffer();
+                    currentZipData = new Uint8Array(newZipBuffer);
+                    currentFileName = file.name;
+
+                    fileName.textContent = file.name;
+                    fileSize.textContent = formatSize(file.size);
+                    fileCard.classList.add('visible');
+                    setStatus('✅ 就绪', 'success');
+
+                    oldUrl.textContent = oldDistributionUrl;
+                    newUrl.textContent = newDistributionUrl;
+                    versionBadge.textContent = `Gradle ${currentGradleVersion}`;
+                    diffSection.classList.add('visible');
+                    actions.classList.add('visible');
+
+                    showToast(`✅ 解析成功，Gradle ${currentGradleVersion}`, 'success', '🎯');
+                    downloadBtn.disabled = false;
+                    replaceBtn.disabled = false;
+                    isProcessing = false;
+
+                } catch (err) {
+                    console.error(err);
+                    showError('处理失败: ' + err.message);
+                    isProcessing = false;
+                    downloadBtn.disabled = false;
+                    replaceBtn.disabled = false;
+                }
+            }
+
+            // ========== 事件绑定 ==========
+            mcVersionSelect.addEventListener('change', function () {
+                const selected = this.value;
+                if (selected) fetchForgeBuilds(selected);
+                else {
+                    forgeBuildSelect.disabled = true;
+                    forgeBuildSelect.innerHTML = '<option value="">请先选择 MC 版本</option>';
+                    downloadForgeBtn.disabled = true;
+                }
+            });
+
+            forgeBuildSelect.addEventListener('change', function () {
+                downloadForgeBtn.disabled = !this.value;
+            });
+
+            downloadForgeBtn.addEventListener('click', downloadAndProcessForge);
+
+            browseBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                fileInput.click();
+            });
+            dropZone.addEventListener('click', () => fileInput.click());
+            fileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    resetUI();
+                    processZip(file);
+                }
+                fileInput.value = '';
+            });
+
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('dragover');
+            });
+            dropZone.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('dragover');
+            });
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('dragover');
+                const items = e.dataTransfer.items;
+                if (items.length > 0) {
+                    const item = items[0];
+                    if (item.kind === 'file') {
+                        const file = item.getAsFile();
+                        if (file) {
+                            resetUI();
+                            processZip(file);
+                        }
+                    }
+                }
+            });
+            document.addEventListener('dragover', (e) => e.preventDefault());
+            document.addEventListener('drop', (e) => e.preventDefault());
+
+            downloadBtn.addEventListener('click', downloadNewZip);
+            replaceBtn.addEventListener('click', replaceOriginalFile);
+            resetBtn.addEventListener('click', () => {
+                resetUI();
+                fileInput.value = '';
+                showToast('已重置', 'info', '🔄');
+            });
+
+            document.addEventListener('paste', (e) => {
+                const items = e.clipboardData && e.clipboardData.items;
+                if (items) {
+                    for (const item of items) {
+                        if (item.kind === 'file') {
+                            const file = item.getAsFile();
+                            if (file && file.name.toLowerCase().endsWith('.zip')) {
+                                resetUI();
+                                processZip(file);
+                                e.preventDefault();
+                                break;
+                            }
+                        }
+                    }
+                }
+            });
+
+            // ========== 初始化 ==========
+            showToast('🔄 正在获取最新 Forge 版本列表...', 'info', '📡');
+            fetchMcVersions();
+            console.log('✅ 纯静态版本已加载，MDK 下载通过二进制代理 (allorigins.win/raw 等)');
+
+        })();
+    </script>
+
+</body>
+
+</html>
