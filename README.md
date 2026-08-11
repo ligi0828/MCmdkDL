@@ -9,6 +9,9 @@ An HTML tool that allows downloading Minecraft mod mdk; this GitHub repository p
 > This version was originally v1.0, but was moved due to special reasons
 > 该版本原本是v1.0，但因为特殊原因转移
 ---
+Website: (https://ligi0828.github.io/MCmdkDL/)[https://ligi0828.github.io/MCmdkDL/]
+网址：(https://ligi0828.github.io/MCmdkDL/)[https://ligi0828.github.io/MCmdkDL/]
+---
 ### Currently supported loaders:
 ### 目前支持的加载器：
 - forge
